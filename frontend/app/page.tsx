@@ -1,101 +1,130 @@
-import Image from "next/image";
+"use client"
+import React, { useState } from "react";
+
+interface Chat {
+  id: number;
+  question: string;
+  answer: string;
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [chats, setChats] = useState<Chat[]>([
+    { id: 1, question: "Вопрос 1", answer: "Ответ 1" },
+    { id: 2, question: "Вопрос 2", answer: "Ответ 2" },
+    { id: 3, question: "Вопрос 3", answer: "Ответ 3" },
+  ]);
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+  const [newChat, setNewChat] = useState<string>("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const addChat = (): void => {
+    const id = chats[chats.length-1].id+1;
+    const newChatItem: Chat = { id, question: `Вопрос ${id}`, answer: `Ответ ${id}` };
+    setChats([...chats, newChatItem]);
+    setSelectedChat(newChatItem); // Устанавливаем новый чат как выбранный
+    setIsSidebarOpen(false); // Закрываем сайдбар (для мобильных устройств)
+  };
+
+  const deleteChat = (id: number): void => {
+    setChats(chats.filter((chat) => chat.id !== id));
+    if (selectedChat?.id === id) setSelectedChat(null);
+  };
+
+  const handleChatSelect = (chat: Chat): void => {
+    setSelectedChat(chat);
+    setIsSidebarOpen(false); // Скрываем сайдбар на мобильных
+  };
+
+  return (
+    <div className="min-h-screen h-screen flex bg-gray-100">
+      {/* Кнопка для открытия сайдбара (мобильные устройства) */}
+      <button
+        className="lg:hidden fixed top-4 left-4 bg-blue-500 text-white px-4 py-2 rounded-md z-10"
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+      >
+        {isSidebarOpen ? "Закрыть" : "Меню"}
+      </button>
+
+      {/* Левая панель */}
+      <div
+        className={`fixed lg:relative top-0 left-0 h-full w-64 bg-white border-r p-4 flex flex-col transform lg:translate-x-0 ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } transition-transform duration-300 ease-in-out z-20`}
+      >
+        <button
+          className="bg-blue-500 text-white px-4 py-2 rounded-md mb-4"
+          onClick={addChat}
+        >
+          [+] Создать чат
+        </button>
+        <div className="space-y-2 overflow-y-auto flex-1">
+          {chats.map((chat) => (
+            <div
+              key={chat.id}
+              className={`p-2 rounded-md flex justify-between items-center cursor-pointer ${
+                selectedChat?.id === chat.id ? "bg-gray-200" : ""
+              }`}
+              onClick={() => handleChatSelect(chat)}
+            >
+              <span className="flex-1">Чат {chat.id}</span>
+              <button
+                className="text-red-500 font-bold ml-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteChat(chat.id);
+                }}
+              >
+                [x]
+              </button>
+            </div>
+          ))}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+      </div>
+
+      {/* Затемнение фона при открытом сайдбаре */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black opacity-50 z-10 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        ></div>
+      )}
+
+      {/* Правая панель */}
+      <div className="flex-1 flex flex-col">
+        <div className="flex-1 p-4">
+          {selectedChat ? (
+            <>
+              <div className="mb-4">
+                <p className="font-semibold">Вопрос:</p>
+                <p className="mb-4">{selectedChat.question}</p>
+                <p className="font-semibold">Ответ:</p>
+                <p>{selectedChat.answer}</p>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-gray-500">
+              Выберите чат слева
+            </div>
+          )}
+        </div>
+
+        {/* Поле ввода и кнопка */}
+        <div className="p-4 border-t flex space-x-2">
+          <input
+            type="text"
+            className="border rounded-md px-4 py-2 flex-1"
+            placeholder="Поле ввода сообщения"
+            value={newChat}
+            onChange={(e) => setNewChat(e.target.value)}
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <button
+            className="bg-green-500 text-white px-4 py-2 rounded-md"
+            onClick={() => console.log(newChat)}
+          >
+            Send
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
